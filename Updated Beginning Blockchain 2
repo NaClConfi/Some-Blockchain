@@ -1,0 +1,265 @@
+# THE Block Chain
+
+from functools import reduce as rd
+import hashlib
+import json
+from collections import OrderedDict
+from HashFile4BB import hashbrown_skillet
+
+INCENTIVE = 10
+
+genesis_block = {
+    'previous_hash': '',
+    'index': 0,
+    'transactions': [],
+    'proof': 99
+    }
+
+
+
+blockchain = [genesis_block]
+open_transactions = []
+owner = 'NaCl Confi'
+#list of users 
+participants = {'NaCl Confi'}
+
+'''def load_data():
+    with open('TheBCfool.txt',mode = 'r') as f:
+        content = f.readlines()
+        global blockchain
+        global open_transactions
+        blockchain = json.dumps(content[0][:-1])
+        open_transactions = json.dumps(content[1])
+        updated_blockchain = []
+        for block in blockchain:
+            updated_block = {
+                'previous_hash': block['previous_hash'],
+                'index': block['index'],
+                'proof': block['proof'],
+                'transactions': [OrderedDict(
+                    [('sender',tx['sender']),('recipient', tx['recipient']),('amount', tx['amount'])])for tx in block['transactions']]
+            }
+        open_transactions = json.loads(content[1])
+        updated_blockchain.append(updated_block)
+
+load_data()'''
+def salvation():
+    with open('TheBCfool.txt', mode = 'w') as BC:
+        BC.write(json.dumps(blockchain))
+        BC.write('\n')
+        BC.write(json.dumps(open_transactions))
+
+
+def get_balance(participant):
+    
+    #Looks through entire blockchain and blocks in a nested 4loop, if the sender is found, tx_sender list holds the amount sent from each transactions
+    tx_sender = [[tx['amount'] for tx in block['transactions'] if tx['sender'] == participant] for block in blockchain] #Mined transactions
+    open_tx_sender = [tx['amount'] for tx in open_transactions if tx['sender'] == participant] # Unmined transactions
+    # prevent double spend by checking both mined block transactions & open transactions
+    tx_sender.append(open_tx_sender)
+    amount_sent = rd(lambda curry_sum, curry_amt: curry_sum + sum(curry_amt) if len(curry_amt) >0 else curry_sum + 0,tx_sender,0)
+    
+           
+    #Collect recieved coins, not in the open transactions because a user can't spend coins from an unverified transaction
+
+           
+    tx_recipient = [[tx['amount'] for tx in block['transactions'] if tx['recipient'] == participant] for block in blockchain]
+    
+
+    amount_received = rd(lambda curry_sum, curry_amt: curry_sum + sum(curry_amt) if len(curry_amt) >0 else curry_sum + 0 ,tx_recipient ,0)
+    print('tx_sender: {} and tx_recipient: {}'.format(tx_sender, tx_recipient))
+            
+    return amount_received - amount_sent
+
+
+def get_BC_val():
+    if len(blockchain) < 1:
+        return 'Bruhhh... There\'s nothing in here. Sorry...'
+    return blockchain[-1]
+
+
+
+
+
+
+def get_choices():
+    user_input= input('What\'s it gonna be???')
+    return user_input
+
+
+
+
+
+def checkdat_xchange(transaction):
+    
+    sender_balance = get_balance(transaction['sender'])
+    
+    return sender_balance >= transaction['amount']
+
+
+
+
+
+
+
+
+
+def add_transaction_data(recipient, sender = owner, amount = 0.0):
+
+   
+
+    transaction = OrderedDict([('sender',sender),('recipient', recipient),('amount', amount)])
+    
+    
+    if checkdat_xchange(transaction):
+        open_transactions.append(transaction)
+        participants.add(sender)
+        participants.add(recipient)
+        salvation()
+        return True
+    return False
+
+
+def mine_block():
+    #Find last block in the blockchain
+    last_block = blockchain[-1]
+    #Hash the last block to compare it to stored hash value in the block
+    hashbrowns = hashbrown_skillet(last_block)
+    proof = you_gon_proof_this_work()
+    
+
+    incentive_tx = OrderedDict([('sender', 'The Ebony Community'),('recipient', owner),('amount', INCENTIVE)])
+    
+    copied_transactions = open_transactions[:]
+    copied_transactions.append(incentive_tx)
+    block = {'previous hash': hashbrowns, 'index': len(blockchain), 'transactions': copied_transactions, 'proof': proof} #Change to Ordered Dictionary
+    print(block)
+    blockchain.append(block)
+    return True
+
+def proofpudding(transactions, last_hash, proof):
+    guess =  (str(transactions) + str(last_hash) + str(proof)).encode() #Encode will make this hash string compatable with sha256 hash function
+    finalhash = hashlib.sha256(guess).hexdigest()
+    statement = 'here is the hash: {}'.format(finalhash)
+    print(statement)
+    return finalhash[0:2] == '00' #Difficulty of the hash
+
+def you_gon_proof_this_work(): # This function produces a proof, the number of times it takes to generate a valid hash 
+    last_block = blockchain[-1]
+    last_hash = hashbrown_skillet(last_block)
+    proof = 0
+    while not proofpudding(open_transactions, last_hash, proof):
+        proof += 1
+    return proof
+
+def insert_trans_amount():
+    """ Allows you to insert data values"""
+    trx_recipient = input('Who is receiving these funds???')
+    trx_amount= float(input('How much would you like to send???'))
+    judoflip = False
+    if trx_amount < 0:
+        print('Only positive transactions, try again')
+        insert_trans_amount()
+        judoflip = True
+
+    if judoflip:
+        trx_amount *= -1
+    return trx_recipient, trx_amount
+
+
+def print_elements():
+    for block in blockchain: 
+            print("Here's the output to the block fool")
+            print("Block")
+            print(block)
+            print(open_transactions)
+    else:
+        print('♪♫'*10)
+def verify(): #this function verifies the block by checking the original hash and our 64 character hash
+    
+    for (i, block) in enumerate(blockchain):
+        if i == 0:
+            continue
+        if block['previous hash'] != hashbrown_skillet(blockchain[i-1]):
+            return False
+        if not proofpudding(block['transactions'][:-1], block['previous hash'],block['proof']):
+            return False
+            
+            '''print("       ")
+            print('Nah you aint slick homie...')
+            print("Invalid Blockchain!!!!!!")
+            print("       ")'''
+            
+    return True
+
+def check_alldem_xchanges():
+    return all([checkdat_xchange(tx) for tx in open_transactions])
+        
+            
+    
+waiting4input = True
+while waiting4input:
+    print('Would you like to enter a transaction or see the status of the blocks')
+    print('   ')
+    print('   ')
+    print('Type "1" to add a new transaction value')
+    print("       ")
+    print('Type "2" to print the transactions')
+    print("       ")
+    print('Type "3" to mine a new block')
+    print("       ")
+    print('Type "4" to display the participants')
+    print("       ")
+    print('Type "5" to verify all transactiions')
+    print("       ")
+    print('Type "runit" to manipulate the chain')
+    print("       ")
+    print('Type "q" (lowercase) to quit blockchain addition')
+    decision = get_choices()
+    if decision =='1':
+
+       trx_input = insert_trans_amount()
+       recipient, amount = trx_input
+       if add_transaction_data(recipient ,amount = amount):
+           print('Transaction went through!')
+       else:
+            print('Transaction failure')
+       print(open_transactions)
+    elif decision=='runit':
+        if len(blockchain) >=1:
+            blockchain[0] = {
+                'previous hash':'',
+                'index':0,
+                'transactions': [{'sender': 'Somebody','recipient':'Me','amount': 3.14}]}
+    elif decision =='2':
+        print_elements()
+
+    elif decision == '3':
+        if mine_block():
+            open_transactions = []
+            salvation()
+    elif decision == '4':
+        print("These are the participants")
+        print(participants)
+
+    elif decision == '5':
+        if check_alldem_xchanges():
+           print('We Good on all transactions!!!')
+        else:
+            print('There seems to be a slight mismanagement of transactions my friend')
+    
+    elif decision == 'q':
+        waiting4input= False
+    else: 
+        print('Invalid answer my guy, but go ahead try it again')
+    if not verify():
+        print_elements()
+        print('INVALIDDDDD')
+        break
+    print('Balance of {}: {:6.2f}'.format(owner,get_balance(owner)))
+    get_balance('Nick')
+else:
+    print("Alll done!!!!")
+    
+  
+print('Finished Mom, Hasta Mañana!')
